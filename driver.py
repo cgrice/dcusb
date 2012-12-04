@@ -62,7 +62,7 @@ class Driver:
 		for i in range(len(self.screen[1])):
 			self.scroll()
 			self.push_screen()
-			time.sleep(0.5)
+			time.sleep(0.1)
 
 	def scroll(self):
 		for row in self.screen:
@@ -141,6 +141,8 @@ d = Driver(0x1D34, 0x0013)
 
 
 print "Running clock code now..."
+
+d.scroll_message('high')
 
 i = 0
 gmail_counter = 0
