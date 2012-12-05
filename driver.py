@@ -34,8 +34,9 @@ class Driver:
 		for row in self.screen:
 			print self.screen[row]
 
-	def write_char(self, char, xloc):
-		f = alphabet.convert(char)
+	def write_char(self, char, xloc, f = None):
+		if f == None:
+			f = alphabet.convert(char)
 
 		fy = 1
 		for y in self.screen:
@@ -54,7 +55,7 @@ class Driver:
 
 	def clear_screen(self):
 		self.screen = self.cleared_screen
-		self.push_screen
+		self.push_screen()
 
 	def scroll_message(self, string):
 		self.write_string(string, 21)
@@ -63,6 +64,8 @@ class Driver:
 			self.scroll()
 			self.push_screen()
 			time.sleep(0.1)
+
+
 
 	def scroll(self):
 		for row in self.screen:
@@ -138,34 +141,95 @@ class Driver:
 
 d = Driver(0x1D34, 0x0013)
 
+import sys
 
 
+
+clock_on = True
+
+def clock():
+	global clock_on
+
+	i = 0
+	gmail_counter = 0
+	while(True):
+		try:
+			if clock_on == True:
+				format_string = "%H:%M"
+				if i > 8:
+					format_string = "%H %M"
+				if i == 10:
+					i = 0
+
+
+				localtime = time.localtime()
+				time_string = time.strftime(format_string, localtime)
+				if time_string == '17:05':
+					d.clear_screen()
+					d.scroll_message('abcabc')
+				else:
+					d.write_string(time_string, 0)
+					d.push_screen()
+
+				time.sleep(0.1)
+				i += 1
+			else:
+				time.sleep(1)
+		except KeyboardInterrupt:
+			sys.exit(1)
+
+import threading
 print "Running clock code now..."
+t_clock = threading.Thread(target=clock)
+t_clock.daemon = True
+# t_clock.start()
 
-d.scroll_message('high')
+from Pubnub import Pubnub
 
-i = 0
-gmail_counter = 0
-while(True):
-	format_string = "%H:%M"
-	if i > 8:
-		format_string = "%H %M"
-	if i == 10:
-		i = 0
+pubnub = Pubnub(
+    "demo",  ## PUBLISH_KEY
+    "demo",  ## SUBSCRIBE_KEY
+    None,    ## SECRET_KEY
+    False    ## SSL_ON?
+)
+
+def receive(message):
+    global clock_on
+
+    note = {
+		1 : [1, 0, 0, 0, 0, 1, 1],
+		2 : [1, 0, 0, 0, 0, 1, 1],
+		3 : [1, 0, 1, 1, 0, 1, 1],
+		4 : [1, 0, 1, 1, 0, 1, 1],
+		5 : [1, 0, 1, 1, 0, 1, 1],
+		6 : [0, 0, 1, 0, 0, 1, 1],
+		7 : [0, 0, 1, 0, 0, 1, 1],
+	}
+
+    clock_on = False
+    if message['artist'] != '' and message['title'] != '':
+    	song = message['artist'] + ' - ' + message['title']
+    	print song
+    	song = song.lower()
+    	d.clear_screen()
+    	d.write_char(None, 0, f=note)
+    	d.write_char(None, 7, f=note)
+    	d.write_char(None, 14, f=note)
+    	d.scroll_message(song)
+    	clock_on = True
+    return True
+
+print "Waiting for songs..."
+
+pubnub.subscribe({
+    'channel'  : 'np_99',
+    'callback' : receive 
+})
+		
+
+# d.scroll_message('abcdefghijklmnopqrstuvwxyz?!-. ')
 
 
-	localtime = time.localtime()
-	time_string = time.strftime(format_string, localtime)
-	if time_string == '17:05':
-		d.clear_screen()
-		d.scroll_message('abcabc')
-	else:
-		d.write_string(time_string, 0)
-		d.push_screen()
-
-	time.sleep(0.1)
-	i += 1
-	gmail_counter +=1
 	
 
 
