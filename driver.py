@@ -1,13 +1,13 @@
-# Product ID: 0x0ffe
-# Vendor ID: 0x0bb4  (HTC Corporation)
+# Vendor ID: 0x1D34
+# Product ID: 0x0013
 
 import usb
 import alphabet
 import time
 
-class Driver:
+class LEDMessageBoard:
 
-	def __init__(self, vendor_id, product_id):
+	def __init__(self, vendor_id = 0x1D34, product_id = 0x0013):
 		self.device = usb.core.find(idVendor=vendor_id, idProduct=product_id)
 		if self.device.is_kernel_driver_active(0) is True:
    			self.device.detach_kernel_driver(0)
@@ -57,8 +57,8 @@ class Driver:
 		self.screen = self.cleared_screen
 		self.push_screen()
 
-	def scroll_message(self, string):
-		self.write_string(string, 21)
+	def scroll_message(self, string, xloc = 21):
+		self.write_string(string, xloc)
 		self.push_screen()
 		for i in range(len(self.screen[1])):
 			self.scroll()
@@ -131,109 +131,4 @@ class Driver:
  
 	def write(self, bytes):
 		return self.device.ctrl_transfer(0x21,0x09,0,0,bytes)
-
-
-	def poll(self):
-		return True
-
-
-
-
-d = Driver(0x1D34, 0x0013)
-
-import sys
-
-
-
-clock_on = True
-
-def clock():
-	global clock_on
-
-	i = 0
-	gmail_counter = 0
-	while(True):
-		try:
-			if clock_on == True:
-				format_string = "%H:%M"
-				if i > 8:
-					format_string = "%H %M"
-				if i == 10:
-					i = 0
-
-
-				localtime = time.localtime()
-				time_string = time.strftime(format_string, localtime)
-				if time_string == '17:05':
-					d.clear_screen()
-					d.scroll_message('abcabc')
-				else:
-					d.write_string(time_string, 0)
-					d.push_screen()
-
-				time.sleep(0.1)
-				i += 1
-			else:
-				time.sleep(1)
-		except KeyboardInterrupt:
-			sys.exit(1)
-
-import threading
-print "Running clock code now..."
-t_clock = threading.Thread(target=clock)
-t_clock.daemon = True
-# t_clock.start()
-
-from Pubnub import Pubnub
-
-pubnub = Pubnub(
-    "demo",  ## PUBLISH_KEY
-    "demo",  ## SUBSCRIBE_KEY
-    None,    ## SECRET_KEY
-    False    ## SSL_ON?
-)
-
-def receive(message):
-    global clock_on
-
-    note = {
-		1 : [1, 0, 0, 0, 0, 1, 1],
-		2 : [1, 0, 0, 0, 0, 1, 1],
-		3 : [1, 0, 1, 1, 0, 1, 1],
-		4 : [1, 0, 1, 1, 0, 1, 1],
-		5 : [1, 0, 1, 1, 0, 1, 1],
-		6 : [0, 0, 1, 0, 0, 1, 1],
-		7 : [0, 0, 1, 0, 0, 1, 1],
-	}
-
-    clock_on = False
-    if message['artist'] != '' and message['title'] != '':
-    	song = message['artist'] + ' - ' + message['title']
-    	print song
-    	song = song.lower()
-    	d.clear_screen()
-    	d.write_char(None, 0, f=note)
-    	d.write_char(None, 7, f=note)
-    	d.write_char(None, 14, f=note)
-    	d.scroll_message(song)
-    	clock_on = True
-    return True
-
-print "Waiting for songs..."
-
-pubnub.subscribe({
-    'channel'  : 'np_99',
-    'callback' : receive 
-})
-		
-
-# d.scroll_message('abcdefghijklmnopqrstuvwxyz?!-. ')
-
-
-	
-
-
-
-
-
 
