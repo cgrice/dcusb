@@ -1,9 +1,9 @@
-import dcusb
+from dcusb.driver import LEDMessageBoard
 import sys
 import threading
 import time
 
-leds = driver.LEDMessageBoard()
+leds = LEDMessageBoard()
 
 clock_on = True
 
