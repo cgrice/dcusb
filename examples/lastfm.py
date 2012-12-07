@@ -88,7 +88,7 @@ def lastfm():
 						clock_on = False
 						now_playing_mbid = now_playing['mbid']
 						song = now_playing['artist']['#text'] + ' - ' + now_playing['name']
-						song = song.lower()
+						# song = song.lower()
 
 						now_playing_url = track_api_url + now_playing_mbid
 						lastfm = requests.get(now_playing_url)
